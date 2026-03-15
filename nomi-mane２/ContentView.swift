@@ -1,0 +1,24 @@
+//
+//  ContentView.swift
+//  nomi-mane２
+//
+//  Created by 川本晴春 on 2026/03/16.
+//
+
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        VStack {
+            Image(systemName: "globe")
+                .imageScale(.large)
+                .foregroundStyle(.tint)
+            Text("Hello, world!")
+        }
+        .padding()
+    }
+}
+
+#Preview {
+    ContentView()
+}
