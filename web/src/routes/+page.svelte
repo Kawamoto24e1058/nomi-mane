@@ -160,15 +160,26 @@
         />
       </label>
 
-      <label class="block">
-        <span class="text-sm font-bold text-gray-700 ml-1">PayPay マイコードURL</span>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between ml-1">
+          <span class="text-sm font-bold text-gray-700">PayPay マイコードURL</span>
+          <a
+            href="paypay://"
+            class="text-[10px] font-bold bg-paypay-red text-white px-3 py-1 rounded-full shadow-sm active:scale-95 transition-all flex items-center gap-1"
+          >
+            📱 PayPayを開く
+          </a>
+        </div>
         <input
           type="url"
           bind:value={paypayUrl}
           placeholder="https://paypay.ne.jp/..."
-          class="mt-1 block w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-paypay-red focus:bg-white transition-all outline-none"
+          class="block w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-paypay-red focus:bg-white transition-all outline-none"
         />
-      </label>
+        <p class="text-[10px] text-gray-400 font-medium leading-relaxed px-1">
+          ※PayPayアプリの『送る・受け取る』＞『請求』からリンクを作成してコピーしてください
+        </p>
+      </div>
 
       <div class="space-y-2">
         <span class="text-sm font-bold text-gray-700 ml-1">銀行口座 / ことら送金</span>
