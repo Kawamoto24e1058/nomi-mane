@@ -2,6 +2,7 @@ import Foundation
 import CoreLocation
 import CoreBluetooth
 import Combine
+import SwiftUI
 
 class BeaconDetector: NSObject, ObservableObject, CLLocationManagerDelegate, CBPeripheralManagerDelegate, CBCentralManagerDelegate, CBPeripheralDelegate {
     @Published var detected = false
@@ -35,6 +36,8 @@ class BeaconDetector: NSObject, ObservableObject, CLLocationManagerDelegate, CBP
     private var userNickname: String {
         UserDefaults.standard.string(forKey: "user_nickname") ?? "Unknown"
     }
+    
+    @AppStorage("payment_pref") private var paymentPref: String = "P"
     
     override init() {
         super.init()
@@ -88,8 +91,8 @@ class BeaconDetector: NSObject, ObservableObject, CLLocationManagerDelegate, CBP
     private func startAdvertisingProfile() {
         guard peripheralManager?.state == .poweredOn else { return }
         
-        // Send format: "Nickname|Status"
-        let advertisedName = "\(userNickname)|\(paymentStatus)"
+        // Send format: "Nickname|Status|PayPref"
+        let advertisedName = "\(userNickname)|\(paymentStatus)|\(paymentPref)"
         
         let advertisementData: [String: Any] = [
             CBAdvertisementDataServiceUUIDsKey: [checkInServiceUUID],

@@ -10,11 +10,12 @@ import CoreBluetooth
 
 struct ContentView: View {
     @AppStorage("user_nickname") var nickname: String = ""
+    @AppStorage("setup_completed") var setupCompleted: Bool = false
     @State private var isShowingProfile = false
     
     var body: some View {
-        if nickname.isEmpty {
-            ProfileView()
+        if !setupCompleted {
+            ProfileSetupView()
         } else {
             NavigationStack {
                 VStack(spacing: 60) {

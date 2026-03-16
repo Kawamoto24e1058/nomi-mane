@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-paypay-background text-gray-900;
+  }
+}
+
+.btn-primary {
+  @apply bg-paypay-red text-white font-bold py-3 px-6 rounded-xl shadow-md active:scale-95 transition-all;
+}
+
+.card {
+  @apply bg-white p-6 rounded-2xl shadow-sm border border-gray-100;
+}

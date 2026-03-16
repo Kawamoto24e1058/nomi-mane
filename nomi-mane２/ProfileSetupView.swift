@@ -1,30 +1,32 @@
 import SwiftUI
 
-struct ProfileView: View {
+struct ProfileSetupView: View {
     @AppStorage("user_nickname") var nickname: String = ""
-    @AppStorage("payment_url") var paymentURL: String = ""
-    @AppStorage("payment_pref") var paymentPref: String = "P"
+    @AppStorage("payment_pref") var paymentPref: String = "P" // P: PayPay, B: Bank, C: Cash
+    @AppStorage("setup_completed") var setupCompleted: Bool = false
     
     @State private var inputName: String = ""
-    @State private var inputURL: String = ""
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
         ScrollView {
             VStack(spacing: 32) {
-                HStack {
-                    Text("プロフィール設定")
-                        .font(.system(size: 24, weight: .black))
+                VStack(spacing: 12) {
+                    Text("初期セットアップ")
+                        .font(.system(size: 28, weight: .black))
                         .foregroundColor(.themeTextPrimary)
-                    Spacer()
+                    
+                    Text("飲み会をスムーズにするために\nプロフィールを登録しましょう")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.themeTextSecondary)
+                        .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
+                .padding(.top, 40)
                 
                 VStack(spacing: 24) {
-                    // 名前
+                    // ① 名前
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("ニックネーム")
+                        Label("お名前 (表示名)", systemImage: "person.fill")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.themeTextSecondary)
                         
@@ -34,12 +36,11 @@ struct ProfileView: View {
                             .background(Color.themeSecondaryBackground)
                             .cornerRadius(12)
                             .foregroundColor(.themeTextPrimary)
-                            .autocorrectionDisabled()
                     }
                     
-                    // 支払い方法
+                    // ② 支払い方法の希望
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("デフォルトの支払い方法")
+                        Label("希望の支払い方法", systemImage: "creditcard.fill")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.themeTextSecondary)
                         
@@ -49,22 +50,6 @@ struct ProfileView: View {
                             PaymentOptionButton(title: "現金", code: "C", icon: "banknote.fill", selectedCode: $paymentPref, color: .green)
                         }
                     }
-                    
-                    // 支払いURL
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("マイコードURL (PayPayなど)")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.themeTextSecondary)
-                        
-                        TextField("https://paypay.ne.jp/...", text: $inputURL)
-                            .font(.system(size: 14))
-                            .padding(16)
-                            .background(Color.themeSecondaryBackground)
-                            .cornerRadius(12)
-                            .foregroundColor(.themeTextPrimary)
-                            .autocorrectionDisabled()
-                            .keyboardType(.URL)
-                    }
                 }
                 .padding(.horizontal, 24)
                 
@@ -72,26 +57,54 @@ struct ProfileView: View {
                 
                 Button(action: {
                     nickname = inputName
-                    paymentURL = inputURL
+                    setupCompleted = true
                     dismiss()
                 }) {
-                    Text("保存する")
+                    Text("はじめる")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(PremiumButtonStyle(variant: .solid))
                 .disabled(inputName.isEmpty)
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
+                .opacity(inputName.isEmpty ? 0.5 : 1.0)
             }
         }
         .appBackground()
         .onAppear {
             inputName = nickname
-            inputURL = paymentURL
+        }
+    }
+}
+
+struct PaymentOptionButton: View {
+    let title: String
+    let code: String
+    let icon: String
+    @Binding var selectedCode: String
+    let color: Color
+    
+    var body: some View {
+        Button(action: { selectedCode = code }) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                Text(title)
+                    .font(.system(size: 10, weight: .bold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(selectedCode == code ? color : Color.themeSecondaryBackground)
+            .foregroundColor(selectedCode == code ? .white : .themeTextSecondary)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(color.opacity(0.3), lineWidth: selectedCode == code ? 0 : 1)
+            )
         }
     }
 }
 
 #Preview {
-    ProfileView()
+    ProfileSetupView()
 }

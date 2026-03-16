@@ -12,6 +12,12 @@ struct HostView: View {
     @State private var sessionURL: String = ""
     @State private var bankInfo: String = ""
     
+    // 個別金額調整用
+    @State private var showingAdjustmentAlert = false
+    @State private var showingActionSheet = false
+    @State private var selectedMember: Member?
+    @State private var adjustmentAmount: String = ""
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
@@ -70,17 +76,57 @@ struct HostView: View {
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(.themeTextSecondary)
                             
-                            TextEditor(text: $bankInfo)
-                                .font(.system(size: 14))
-                                .frame(minHeight: 80)
-                                .padding(8)
-                                .background(Color.themeSecondaryBackground)
-                                .cornerRadius(8)
-                                .foregroundColor(.themeTextPrimary)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-                                )
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    bankInfo = "銀行名：\n支店名：\n種別：普通\n口座番号：\n名義（カナ）："
+                                }) {
+                                    Text("🏦 口座情報の雛形")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 10)
+                                        .background(Color.themeBackground)
+                                        .foregroundColor(.themeAccentRed)
+                                        .cornerRadius(6)
+                                        .shadow(color: Color.black.opacity(0.05), radius: 2)
+                                }
+                                
+                                Button(action: {
+                                    bankInfo = "ことら送金（電話番号等）：\n名義（カナ）："
+                                }) {
+                                    Text("📱 ことら送金の雛形")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 10)
+                                        .background(Color.themeBackground)
+                                        .foregroundColor(.themeAccentRed)
+                                        .cornerRadius(6)
+                                        .shadow(color: Color.black.opacity(0.05), radius: 2)
+                                }
+                            }
+                            .padding(.bottom, 2)
+                            
+                            ZStack(alignment: .topLeading) {
+                                TextEditor(text: $bankInfo)
+                                    .font(.system(size: 14))
+                                    .frame(minHeight: 100)
+                                    .padding(8)
+                                    .background(Color.themeSecondaryBackground)
+                                    .cornerRadius(8)
+                                    .foregroundColor(.themeTextPrimary)
+                                
+                                if bankInfo.isEmpty {
+                                    Text("上のボタンから雛形を入力するか、口座情報をペーストしてください")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.gray.opacity(0.6))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 16)
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                            )
                         }
                     }
                     
@@ -140,6 +186,8 @@ struct HostView: View {
                     .buttonStyle(PremiumButtonStyle(variant: beaconTransmitter.isAdvertising ? .outlined : .solid))
                     .disabled(beaconTransmitter.bluetoothState != .poweredOn)
                 }
+                .cardStyle()
+                
                 .cardStyle()
                 
                 // 集金状況カード
@@ -209,10 +257,9 @@ struct HostView: View {
                     } else {
                         VStack(spacing: 12) {
                             ForEach(hostScanner.checkedInMembers) { member in
-                                MemberRow(member: member) {
-                                    withAnimation(.easeOut(duration: 0.3)) {
-                                        hostScanner.updateMemberStatus(name: member.name, status: .completed)
-                                    }
+                                MemberRow(member: member, globalFee: getGlobalFee()) {
+                                    selectedMember = member
+                                    showingActionSheet = true
                                 }
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                             }
@@ -232,6 +279,14 @@ struct HostView: View {
                 Text("幹事モード")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.themeTextSecondary)
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                ShareLink(item: generateReportText(), subject: Text("【会計報告】"), message: Text("集計結果を共有します。")) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.themeAccentRed)
+                }
             }
         }
         .onAppear {
@@ -253,6 +308,79 @@ struct HostView: View {
                 checkClipboardForPayPayURL()
             }
         }
+        .actionSheet(isPresented: $showingActionSheet) {
+            ActionSheet(
+                title: Text("\(selectedMember?.name ?? "") さん"),
+                message: Text("支払いを完了にしますか？"),
+                buttons: [
+                    .default(Text("そのまま完了にする")) {
+                        if let member = selectedMember {
+                            withAnimation {
+                                hostScanner.updateMemberStatus(name: member.name, status: .completed)
+                            }
+                        }
+                    },
+                    .default(Text("金額を変更して完了にする")) {
+                        if let member = selectedMember {
+                            adjustmentAmount = "\(member.actualFee ?? getGlobalFee())"
+                            showingAdjustmentAlert = true
+                        }
+                    },
+                    .cancel(Text("キャンセル"))
+                ]
+            )
+        }
+        .alert("金額の変更", isPresented: $showingAdjustmentAlert) {
+            TextField("金額", text: $adjustmentAmount)
+                .keyboardType(.numberPad)
+            Button("確定", action: {
+                if let member = selectedMember, let fee = Int(adjustmentAmount) {
+                    withAnimation {
+                        hostScanner.updateMemberStatus(name: member.name, status: .completed, fee: fee)
+                    }
+                }
+            })
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("\(selectedMember?.name ?? "") さんの支払額を入力してください。")
+        }
+    }
+    
+    private func generateReportText() -> String {
+        let globalFee = getGlobalFee()
+        let collectedAmount = calculateCollectedAmount()
+        let members = hostScanner.checkedInMembers
+        
+        var report = "【会計報告】\n"
+        report += "合計回収額: ¥\(collectedAmount)\n"
+        report += "--------------------\n"
+        
+        if members.isEmpty {
+            report += "参加者なし"
+        } else {
+            for member in members {
+                let amount = member.actualFee ?? globalFee
+                let statusStr = member.status == .completed ? "完了" : "待ち"
+                let payMethod = getPaymentMethodName(member.prefPayment)
+                report += "・\(member.name): ¥\(amount) (\(payMethod)) - \(statusStr)\n"
+            }
+        }
+        
+        return report
+    }
+    
+    private func getPaymentMethodName(_ code: String) -> String {
+        switch code {
+        case "P": return "PayPay"
+        case "B": return "銀行/ことら"
+        case "C": return "現金"
+        default: return "不明"
+        }
+    }
+    
+    private func getGlobalFee() -> Int {
+        let amountStr = feeMemo.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+        return Int(amountStr) ?? 0
     }
     
     private func calculateCollectedMembers() -> Int {
@@ -260,15 +388,15 @@ struct HostView: View {
     }
     
     private func calculateCollectedAmount() -> Int {
-        let amountStr = feeMemo.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
-        let fee = Int(amountStr) ?? 0
-        return fee * calculateCollectedMembers()
+        let globalFee = getGlobalFee()
+        return hostScanner.checkedInMembers
+            .filter { $0.status == .completed }
+            .reduce(0) { $0 + ($1.actualFee ?? globalFee) }
     }
     
     private func calculateTotalAmount() -> Int {
-        let amountStr = feeMemo.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
-        let fee = Int(amountStr) ?? 0
-        return fee * hostScanner.checkedInMembers.count
+        let globalFee = getGlobalFee()
+        return hostScanner.checkedInMembers.count * globalFee
     }
     
     private func checkClipboardForPayPayURL() {
@@ -316,33 +444,42 @@ struct GuideRow: View {
 
 struct MemberRow: View {
     let member: Member
-    var onComplete: () -> Void
+    let globalFee: Int
+    var onTap: () -> Void
     
     var body: some View {
-        HStack(spacing: 16) {
-            Circle()
-                .fill(statusColor().opacity(0.1))
-                .frame(width: 44, height: 44)
-                .overlay(
-                    Image(systemName: member.status.icon)
-                        .foregroundColor(statusColor())
-                        .font(.system(size: 18))
-                )
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(member.name)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.themeTextPrimary)
+        Button(action: onTap) {
+            HStack(spacing: 16) {
+                Circle()
+                    .fill(statusColor().opacity(0.1))
+                    .frame(width: 44, height: 44)
+                    .overlay(
+                        Image(systemName: member.status.icon)
+                            .foregroundColor(statusColor())
+                            .font(.system(size: 18))
+                    )
                 
-                Text(statusLabel())
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(member.name)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.themeTextPrimary)
+                    
+                    HStack(spacing: 8) {
+                        Text(statusLabel())
+                        
+                        if let fee = member.actualFee {
+                            Text("¥\(fee)")
+                                .fontWeight(.black)
+                                .foregroundColor(.themeAccentRed)
+                        }
+                    }
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(statusColor())
-            }
-            
-            Spacer()
-            
-            if member.status != .completed {
-                Button(action: onComplete) {
+                }
+                
+                Spacer()
+                
+                if member.status != .completed {
                     Text("完了")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
@@ -350,17 +487,18 @@ struct MemberRow: View {
                         .padding(.vertical, 10)
                         .background(Color.themeAccentRed)
                         .cornerRadius(25)
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.themeAccentRed)
                 }
-            } else {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundColor(.themeAccentRed)
             }
+            .padding(16)
+            .background(Color.themeBackground)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
         }
-        .padding(16)
-        .background(Color.themeBackground)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
+        .buttonStyle(PlainButtonStyle())
     }
     
     private func statusLabel() -> String {

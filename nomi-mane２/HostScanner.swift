@@ -34,6 +34,8 @@ struct Member: Identifiable, Equatable {
     let id: String // Currenty just the name for uniqueness
     let name: String
     var status: PaymentStatus
+    var actualFee: Int?
+    var prefPayment: String // P, B, C
 }
 
 class HostScanner: NSObject, ObservableObject, CBCentralManagerDelegate {
@@ -58,9 +60,12 @@ class HostScanner: NSObject, ObservableObject, CBCentralManagerDelegate {
         centralManager?.stopScan()
     }
     
-    func updateMemberStatus(name: String, status: PaymentStatus) {
+    func updateMemberStatus(name: String, status: PaymentStatus, fee: Int? = nil) {
         if let index = checkedInMembers.firstIndex(where: { $0.name == name }) {
             checkedInMembers[index].status = status
+            if let fee = fee {
+                checkedInMembers[index].actualFee = fee
+            }
         }
     }
     
@@ -75,10 +80,12 @@ class HostScanner: NSObject, ObservableObject, CBCentralManagerDelegate {
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         if let advertisedName = advertisementData[CBAdvertisementDataLocalNameKey] as? String {
-            // Format: "Name|Status"
-            let parts = advertisedName.split(separator: "|")
+            // Format: "Name|Status|PayPref"
+            let parts = advertisedName.split(separator: "|", omittingEmptySubsequences: false)
             let name = String(parts[0])
             let statusCode = parts.count > 1 ? String(parts[1]) : "0"
+            let payPref = parts.count > 2 ? String(parts[2]) : "P"
+            
             let status = PaymentStatus(rawValue: statusCode) ?? .unpaid
             
             DispatchQueue.main.async {
@@ -88,9 +95,16 @@ class HostScanner: NSObject, ObservableObject, CBCentralManagerDelegate {
                     if self.checkedInMembers[index].status != .completed {
                         self.checkedInMembers[index].status = status
                     }
+                    self.checkedInMembers[index].prefPayment = payPref
                 } else {
-                    self.checkedInMembers.append(Member(id: name, name: name, status: status))
-                    print("Discovered member: \(name) with status \(status)")
+                    let newMember = Member(
+                        id: name,
+                        name: name,
+                        status: status,
+                        prefPayment: payPref
+                    )
+                    self.checkedInMembers.append(newMember)
+                    print("Discovered member: \(name) with status \(status), pref: \(payPref)")
                 }
             }
         }
