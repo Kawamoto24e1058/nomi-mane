@@ -1,6 +1,10 @@
 <script lang="ts">
   // @ts-nocheck
-  import { Html5QrcodeScanner, Html5Qrcode } from "html5-qrcode";
+  import { db } from "$lib/firebase";
+  import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
 
   let hostName = "";
   let baseFee = 1000;
@@ -10,7 +14,7 @@
   let isMounted = false;
 
   let showScanner = false;
-  let html5QrCode: Html5Qrcode | null = null;
+  let html5QrCode: any = null;
   let scannerError = "";
 
   onMount(() => {
@@ -23,12 +27,16 @@
   });
 
   async function startScanner() {
+    if (!browser) return;
     showScanner = true;
     scannerError = "";
     
     // 短いラグを入れてDOMのレンダリングを待つ
     setTimeout(async () => {
       try {
+        // 動的インポート
+        const { Html5Qrcode } = await import("html5-qrcode");
+        
         html5QrCode = new Html5Qrcode("reader");
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         
