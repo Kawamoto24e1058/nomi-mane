@@ -25,6 +25,7 @@
   "type": "module",
   "dependencies": {
     "firebase": "^10.7.1",
+    "html5-qrcode": "^2.3.8",
     "lucide-svelte": "^0.294.0",
     "svelte-qrcode": "^1.0.0"
   }

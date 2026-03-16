@@ -15,12 +15,16 @@
 // @ts-ignore
   import QRCode from "svelte-qrcode";
 // @ts-ignore
-  import { Share2, CheckCircle2, Circle, User2, ChevronRight, Copy, Trash2 } from "lucide-svelte";
+  import { Share2, CheckCircle2, Circle, User2, ChevronRight, Copy, Trash2, Settings, X } from "lucide-svelte";
 
   const roomId = $page.params.roomId;
   let roomData: any = null;
   let guests: any[] = [];
   let joinUrl = "";
+
+  let showSettings = false;
+  let editPayPayUrl = "";
+  let editBankInfo = "";
 
   onMount(() => {
     if (typeof window !== "undefined") {
@@ -30,6 +34,10 @@
     // Subscribe to Room Data
     const unsubRoom = onSnapshot(doc(db, "rooms", roomId), (doc) => {
       roomData = doc.data();
+      if (roomData && !showSettings) {
+        editPayPayUrl = roomData.paypayUrl || "";
+        editBankInfo = roomData.bankInfo || "";
+      }
     });
 
     // Subscribe to Guests
@@ -129,6 +137,20 @@
       console.error("Failed to copy report:", e);
     }
   }
+
+  async function saveSettings() {
+    if (!browser) return;
+    try {
+      await updateDoc(doc(db, "rooms", roomId), {
+        paypayUrl: editPayPayUrl,
+        bankInfo: editBankInfo
+      });
+      showSettings = false;
+    } catch (e) {
+      console.error("Error saving settings:", e);
+      alert("保存に失敗しました。");
+    }
+  }
 </script>
 
 <svelte:head>
@@ -137,9 +159,26 @@
 
 <main class="max-w-xl mx-auto px-4 py-8 bg-paypay-lightGray min-h-screen">
   <header class="flex items-center justify-between mb-6 px-2">
-    <h1 class="text-xl font-black text-gray-800">幹事ダッシュボード</h1>
-    <div class="bg-paypay-red text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">
-      リアルタイム更新中
+    <div>
+      <h1 class="text-xl font-black text-gray-800 italic">Dashboard</h1>
+      {#if roomData}
+        <p class="text-[10px] font-bold text-gray-400">幹事: {roomData.hostName}</p>
+      {/if}
+    </div>
+    <div class="flex items-center gap-3">
+      <button 
+        on:click={() => {
+          editPayPayUrl = roomData?.paypayUrl || "";
+          editBankInfo = roomData?.bankInfo || "";
+          showSettings = true;
+        }}
+        class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-400 hover:text-paypay-red transition-all"
+      >
+        <Settings size={18} />
+      </button>
+      <div class="bg-paypay-red text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">
+        リアルタイム更新中
+      </div>
     </div>
   </header>
 
@@ -267,6 +306,51 @@
     <div class="flex flex-col items-center justify-center h-64 text-gray-400">
       <div class="animate-spin text-3xl mb-4">🌀</div>
       <p class="text-sm font-medium">データを読み込み中...</p>
+    </div>
+  {/if}
+
+  {#if showSettings}
+    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" on:click={() => showSettings = false}></div>
+      <div class="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-8 space-y-6 animate-in slide-in-from-bottom duration-300">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-black text-gray-800">ルーム設定</h2>
+          <button on:click={() => showSettings = false} class="text-gray-400 hover:text-gray-600">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <label class="block">
+            <span class="text-xs font-bold text-gray-500 ml-1">PayPay マイコードURL</span>
+            <input
+              type="url"
+              bind:value={editPayPayUrl}
+              placeholder="https://paypay.ne.jp/..."
+              class="mt-1 block w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-paypay-red focus:bg-white transition-all outline-none text-sm"
+            />
+          </label>
+
+          <label class="block">
+            <span class="text-xs font-bold text-gray-500 ml-1">銀行口座 / ことら送金</span>
+            <textarea
+              bind:value={editBankInfo}
+              rows="4"
+              placeholder="振込先情報を入力"
+              class="mt-1 block w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-paypay-red focus:bg-white transition-all outline-none text-sm"
+            ></textarea>
+          </label>
+        </div>
+
+        <button 
+          on:click={saveSettings}
+          class="btn-primary w-full py-4 text-sm"
+        >
+          保存する
+        </button>
+      </div>
     </div>
   {/if}
 </main>

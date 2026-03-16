@@ -1,18 +1,20 @@
 <script lang="ts">
   // @ts-nocheck
   import { db } from "$lib/firebase";
-  import { doc, getDoc, deleteDoc, collection, query, where, getDocs, onSnapshot } from "firebase/firestore";
+  import { doc, getDoc, deleteDoc, collection, query, where, getDocs, onSnapshot, updateDoc } from "firebase/firestore";
   import { page } from "$app/stores";
   import { onMount, onDestroy } from "svelte";
-  import { CheckCircle2, ExternalLink, LogOut, Circle } from "lucide-svelte";
+  import { CheckCircle2, ExternalLink, LogOut, Circle, X } from "lucide-svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
 
   const roomId = $page.params.roomId;
-  const method = $page.url.searchParams.get("method");
+  let method = $page.url.searchParams.get("method");
   let roomData: any = null;
   let guestData: any = null;
   let unsubscribeGuest: any = null;
+
+  let showMethodModal = false;
 
   onMount(async () => {
     // Subscribe to Room Data
@@ -85,6 +87,24 @@
   function openPayPay() {
     if (browser && roomData?.paypayUrl) {
       window.location.href = roomData.paypayUrl;
+    }
+  }
+
+  async function updateMethod(newMethod: string) {
+    if (!browser || !guestData) return;
+    try {
+      await updateDoc(doc(db, "rooms", roomId, "guests", guestData.id), {
+        paymentMethod: newMethod
+      });
+      method = newMethod;
+      showMethodModal = false;
+      // URLを更新（ブラウザバック対策）
+      const url = new URL(window.location.href);
+      url.searchParams.set('method', newMethod);
+      window.history.replaceState({}, '', url);
+    } catch (e) {
+      console.error("Error updating method:", e);
+      alert("変更に失敗しました。");
     }
   }
 </script>
@@ -165,6 +185,15 @@
           </div>
         {/if}
 
+        <div class="text-center">
+          <button 
+            on:click={() => showMethodModal = true}
+            class="text-[10px] font-bold text-gray-400 border-b border-gray-200 pb-0.5 hover:text-paypay-red hover:border-paypay-red transition-all"
+          >
+            支払い方法を変更する
+          </button>
+        </div>
+
         <button 
           on:click={notifyPaid}
           class="w-full bg-gray-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-gray-200 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
@@ -190,4 +219,58 @@
       トップページへ戻る
     </button>
   </footer>
+
+  {#if showMethodModal}
+    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" on:click={() => showMethodModal = false}></div>
+      <div class="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-8 space-y-6 animate-in slide-in-from-bottom duration-300">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-black text-gray-800">支払い方法を変更</h2>
+          <button on:click={() => showMethodModal = false} class="text-gray-400 hover:text-gray-600">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3">
+          <button
+            on:click={() => updateMethod('paypay')}
+            class="flex items-center justify-between p-4 rounded-xl border-2 transition-all {method === 'paypay' ? 'border-paypay-red bg-red-50' : 'border-gray-50 bg-gray-50'}"
+          >
+            <span class="font-bold {method === 'paypay' ? 'text-paypay-red' : 'text-gray-600'}">PayPay</span>
+            {#if method === 'paypay'}
+              <div class="w-5 h-5 rounded-full bg-paypay-red flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-white"></div>
+              </div>
+            {/if}
+          </button>
+
+          <button
+            on:click={() => updateMethod('bank')}
+            class="flex items-center justify-between p-4 rounded-xl border-2 transition-all {method === 'bank' ? 'border-paypay-red bg-red-50' : 'border-gray-50 bg-gray-50'}"
+          >
+            <span class="font-bold {method === 'bank' ? 'text-paypay-red' : 'text-gray-600'}">銀行振込 / ことら送金</span>
+            {#if method === 'bank'}
+              <div class="w-5 h-5 rounded-full bg-paypay-red flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-white"></div>
+              </div>
+            {/if}
+          </button>
+
+          <button
+            on:click={() => updateMethod('cash')}
+            class="flex items-center justify-between p-4 rounded-xl border-2 transition-all {method === 'cash' ? 'border-paypay-red bg-red-50' : 'border-gray-50 bg-gray-50'}"
+          >
+            <span class="font-bold {method === 'cash' ? 'text-paypay-red' : 'text-gray-600'}">現金</span>
+            {#if method === 'cash'}
+              <div class="w-5 h-5 rounded-full bg-paypay-red flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-white"></div>
+              </div>
+            {/if}
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
 </main>
