@@ -1,0 +1,21 @@
+{
+  "name": "飲みマネ",
+  "short_name": "飲みマネ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#E52C2D",
+  "description": "飲み会の集計をスマートにする集金管理アプリ",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
