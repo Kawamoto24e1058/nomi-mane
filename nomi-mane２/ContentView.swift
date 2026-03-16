@@ -9,27 +9,74 @@ import SwiftUI
 import CoreBluetooth
 
 struct ContentView: View {
+    @AppStorage("user_nickname") var nickname: String = ""
+    @State private var isShowingProfile = false
+    
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 30) {
-                Text("飲みマネ")
-                    .font(.system(size: 40, weight: .bold))
-                    .padding(.top, 50)
-                
-                Spacer()
-                
-                NavigationLink(destination: HostView()) {
-                    HomeButton(title: "幹事になる（発信）", icon: "person.fill.badge.plus", color: .blue)
+        if nickname.isEmpty {
+            ProfileView()
+        } else {
+            NavigationStack {
+                VStack(spacing: 60) {
+                    Spacer()
+                    
+                    VStack(spacing: 12) {
+                        Image(systemName: "hand.wave.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(.themeAccentRed)
+                        
+                        Text("飲みマネ")
+                            .font(.system(size: 32, weight: .black))
+                            .foregroundColor(.themeTextPrimary)
+                        
+                        Text("こんにちは、\(nickname) さん")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.themeTextSecondary)
+                    }
+                    
+                    VStack(spacing: 20) {
+                        NavigationLink(destination: HostView()) {
+                            HStack {
+                                Image(systemName: "person.2.fill")
+                                Text("幹事になる")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PremiumButtonStyle(variant: .solid))
+                        
+                        NavigationLink(destination: GuestView()) {
+                            HStack {
+                                Image(systemName: "person.fill.checkmark")
+                                Text("参加する")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PremiumButtonStyle(variant: .outlined))
+                    }
+                    .padding(.horizontal, 32)
+                    
+                    Spacer()
+                    Spacer()
                 }
-                
-                NavigationLink(destination: GuestView()) {
-                    HomeButton(title: "参加する（受信）", icon: "person.2.fill", color: .green)
+                .appBackground()
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            isShowingProfile = true
+                        }) {
+                            Image(systemName: "person.crop.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.themeTextSecondary)
+                        }
+                    }
                 }
-                
-                Spacer()
-                Spacer()
+                .sheet(isPresented: $isShowingProfile) {
+                    NavigationStack {
+                        ProfileView()
+                    }
+                }
             }
-            .padding()
+            .accentColor(.themeAccentRed)
         }
     }
 }

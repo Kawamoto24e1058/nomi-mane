@@ -257,6 +257,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "飲み会のメンバーを自動検知するためにBluetoothを使用します。";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "ビーコンとして信号を発信し、他のメンバーから検知されるためにBluetoothを使用します。";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "アプリを閉じている間も、近くのメンバーを自動で記録するために必要です。";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "常に位置情報を使用することで、アプリを閉じている間も自動チェックインが可能になります。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "近くの端末（ビーコン）を探すために位置情報を使用します。";
@@ -294,6 +295,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "飲み会のメンバーを自動検知するためにBluetoothを使用します。";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "ビーコンとして信号を発信し、他のメンバーから検知されるためにBluetoothを使用します。";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "アプリを閉じている間も、近くのメンバーを自動で記録するために必要です。";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "常に位置情報を使用することで、アプリを閉じている間も自動チェックインが可能になります。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "近くの端末（ビーコン）を探すために位置情報を使用します。";
