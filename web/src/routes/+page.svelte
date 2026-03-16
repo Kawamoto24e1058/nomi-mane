@@ -30,16 +30,16 @@
     if (!browser) return;
     showScanner = true;
     scannerError = "";
-    
+
     // 短いラグを入れてDOMのレンダリングを待つ
     setTimeout(async () => {
       try {
         // 動的インポート
         const { Html5Qrcode } = await import("html5-qrcode");
-        
+
         html5QrCode = new Html5Qrcode("reader");
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        
+
         await html5QrCode.start(
           { facingMode: "environment" },
           config,
@@ -49,7 +49,7 @@
           },
           (errorMessage) => {
             // スキャン中（エラーではない）
-          }
+          },
         );
       } catch (err) {
         console.error("Scanner Error:", err);
@@ -81,10 +81,10 @@
     } catch (e) {
       // URLではない文字列の場合も同様
       if (result.startsWith("/join/")) {
-         stopScanner();
-         goto(result);
+        stopScanner();
+        goto(result);
       } else {
-         alert("有効なコードではありません。");
+        alert("有効なコードではありません。");
       }
     }
   }
@@ -92,11 +92,11 @@
   async function createRoom(event?: Event) {
     if (!hostName) {
       if (browser) {
-        alert('エラー：幹事の名前が入力されていません');
+        alert("エラー：幹事の名前が入力されていません");
       }
       return;
     }
-    
+
     isLoading = true;
     try {
       const docRef = await addDoc(collection(db, "rooms"), {
@@ -104,7 +104,7 @@
         baseFee: Number(baseFee),
         paypayUrl,
         bankInfo,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
       });
       goto(`/host/${docRef.id}`);
     } catch (e: any) {
@@ -130,11 +130,12 @@
   <title>飲みマネ - 飲み会ルーム作成</title>
 </svelte:head>
 
-
 <main class="max-w-md mx-auto px-6 py-12">
   <div class="text-center mb-10">
     <h1 class="text-3xl font-black text-paypay-red italic mb-2">飲みマネ</h1>
-    <p class="text-gray-500 font-medium text-sm">飲み会の集計を、もっとスマートに。</p>
+    <p class="text-gray-500 font-medium text-sm">
+      飲み会の集計を、もっとスマートに。
+    </p>
   </div>
 
   <form on:submit|preventDefault={createRoom} class="space-y-8">
@@ -162,7 +163,9 @@
 
       <div class="space-y-2">
         <div class="flex items-center justify-between ml-1">
-          <span class="text-sm font-bold text-gray-700">PayPay マイコードURL</span>
+          <span class="text-sm font-bold text-gray-700"
+            >PayPay マイコードURL</span
+          >
           <a
             href="paypay://"
             class="text-[10px] font-bold bg-paypay-red text-white px-3 py-1 rounded-full shadow-sm active:scale-95 transition-all flex items-center gap-1"
@@ -177,15 +180,27 @@
           class="block w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-paypay-red focus:bg-white transition-all outline-none"
         />
         <p class="text-[10px] text-gray-400 font-medium leading-relaxed px-1">
-          ※PayPayアプリの『送る・受け取る』＞『請求』からリンクを作成してコピーしてください
+          ※PayPayアプリの右下にある『アカウント』＞『マイコード』からリンクを作成してコピーしてください
         </p>
       </div>
 
       <div class="space-y-2">
-        <span class="text-sm font-bold text-gray-700 ml-1">銀行口座 / ことら送金</span>
+        <span class="text-sm font-bold text-gray-700 ml-1"
+          >銀行口座 / ことら送金</span
+        >
         <div class="flex gap-2">
-          <button type="button" on:click={useTemplateA} class="text-[10px] bg-white border border-gray-200 text-paypay-red px-2 py-1 rounded-md shadow-sm">🏦 口座雛形</button>
-          <button type="button" on:click={useTemplateB} class="text-[10px] bg-white border border-gray-200 text-paypay-red px-2 py-1 rounded-md shadow-sm">📱 ことら雛形</button>
+          <button
+            type="button"
+            on:click={useTemplateA}
+            class="text-[10px] bg-white border border-gray-200 text-paypay-red px-2 py-1 rounded-md shadow-sm"
+            >🏦 口座雛形</button
+          >
+          <button
+            type="button"
+            on:click={useTemplateB}
+            class="text-[10px] bg-white border border-gray-200 text-paypay-red px-2 py-1 rounded-md shadow-sm"
+            >📱 ことら雛形</button
+          >
         </div>
         <textarea
           bind:value={bankInfo}
@@ -227,18 +242,27 @@
   </form>
 
   {#if showScanner}
-    <div class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6">
-      <div class="w-full max-w-sm aspect-square bg-gray-900 rounded-3xl overflow-hidden relative shadow-2xl border-4 border-paypay-red" id="reader">
+    <div
+      class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6"
+    >
+      <div
+        class="w-full max-w-sm aspect-square bg-gray-900 rounded-3xl overflow-hidden relative shadow-2xl border-4 border-paypay-red"
+        id="reader"
+      >
         {#if scannerError}
-          <div class="absolute inset-0 flex items-center justify-center text-white text-center p-4">
-             <p class="font-bold">{scannerError}</p>
+          <div
+            class="absolute inset-0 flex items-center justify-center text-white text-center p-4"
+          >
+            <p class="font-bold">{scannerError}</p>
           </div>
         {/if}
       </div>
-      
-      <p class="text-white mt-8 font-bold text-center">招待QRコードを枠内に収めてください</p>
-      
-      <button 
+
+      <p class="text-white mt-8 font-bold text-center">
+        招待QRコードを枠内に収めてください
+      </p>
+
+      <button
         on:click={stopScanner}
         class="mt-12 bg-white/10 text-white border border-white/20 px-8 py-3 rounded-full font-bold hover:bg-white/20 transition-all"
       >

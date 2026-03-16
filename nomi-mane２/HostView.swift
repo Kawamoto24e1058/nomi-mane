@@ -132,7 +132,7 @@ struct HostView: View {
                     
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
-                            GuideRow(icon: "1.circle.fill", text: "PayPayの「送る・受け取る」をタップ")
+                            GuideRow(icon: "1.circle.fill", text: "PayPayの右下「アカウント」をタップ")
                             GuideRow(icon: "2.circle.fill", text: "自分の「マイコード」を表示")
                             GuideRow(icon: "3.circle.fill", text: "「リンクをコピー」を押して戻る")
                         }
